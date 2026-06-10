@@ -4,8 +4,12 @@ import android.content.Context
 import com.osrm.api.models.RouteResponse as OsrmRouteResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.valhalla.api.models.DirectionsOptions
+import com.valhalla.api.models.MapMatchRequest
 import com.valhalla.api.models.RouteRequest
 import com.valhalla.api.models.RouteResponse
+import com.valhalla.api.models.TraceAttributesRequest
+import com.valhalla.api.models.TraceAttributesResponse
 import com.valhalla.config.models.ValhallaConfig
 import com.valhalla.valhalla.config.ValhallaConfigManager
 
@@ -60,7 +64,40 @@ class Valhalla(
   fun route(request: RouteRequest): ValhallaResponse {
     val encodedRequest = moshi.adapter(RouteRequest::class.java).toJson(request)
     val rawResponse = valhallaActor.route(encodedRequest)
+    val format = request.format?.let { reqFormat ->
+        DirectionsOptions.Format.entries.firstOrNull { it.name == reqFormat.name }
+    }
+    return parseRouteResponse(rawResponse, format)
+  }
 
+  fun traceRoute(request: MapMatchRequest): ValhallaResponse {
+    val encodedRequest = moshi.adapter(MapMatchRequest::class.java).toJson(request)
+    val rawResponse = valhallaActor.traceRoute(encodedRequest)
+    return parseRouteResponse(rawResponse, request.directionsOptions?.format)
+  }
+
+  fun traceAttributes(request: TraceAttributesRequest): TraceAttributesResponse {
+    val encodedRequest = moshi.adapter(TraceAttributesRequest::class.java).toJson(request)
+    var rawResponse = valhallaActor.traceAttributes(encodedRequest)
+
+    if (rawResponse.contains("code") && !rawResponse.contains("edges")) {
+      val error = moshi.adapter(ErrorResponse::class.java).fromJson(rawResponse)
+      error?.let { throw ValhallaException.Internal(it) }
+      throw ValhallaException.InvalidError()
+    }
+
+    // Workaround: osm_changeset is defined as an Int? in the external models dependency,
+    // but OSM changesets can exceed Int.MAX_VALUE. We replace the value with null to avoid crashing.
+    rawResponse = rawResponse.replace(Regex("\"osm_changeset\"\\s*:\\s*\\d+"), "\"osm_changeset\":null")
+
+    return moshi.adapter(TraceAttributesResponse::class.java).fromJson(rawResponse)
+        ?: throw ValhallaException.InvalidResponse()
+  }
+
+  private fun parseRouteResponse(
+      rawResponse: String,
+      format: DirectionsOptions.Format?
+  ): ValhallaResponse {
     // Check for error response in Valhalla format.
     // OSRM has a code and message like the valhalla error, but it's not the same format.
     // If the response contains routes, it's a valid OSRM response.
@@ -70,17 +107,15 @@ class Valhalla(
       throw ValhallaException.InvalidError()
     }
 
-    return when (request.format) {
-      RouteRequest.Format.gpx -> throw ValhallaException.NotSupported()
-      RouteRequest.Format.osrm -> {
+    return when (format) {
+      DirectionsOptions.Format.gpx -> throw ValhallaException.NotSupported()
+      DirectionsOptions.Format.osrm -> {
         val osrmResponse =
             moshi.adapter(OsrmRouteResponse::class.java).fromJson(rawResponse)
                 ?: throw ValhallaException.InvalidResponse()
         ValhallaResponse.Osrm(osrmResponse)
       }
-
-      RouteRequest.Format.pbf -> throw ValhallaException.NotSupported()
-      // else includes default valhalla: RouteRequest.Format.json
+      DirectionsOptions.Format.pbf -> throw ValhallaException.NotSupported()
       else -> {
         val valhallaResponse =
             moshi.adapter(RouteResponse::class.java).fromJson(rawResponse)

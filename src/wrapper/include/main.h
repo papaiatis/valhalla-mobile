@@ -16,6 +16,16 @@ JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_route(JNIEnv
                                                 jstring jRequest,
                                                 jstring jConfigPath);
 
+JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_traceRoute(JNIEnv *env,
+                                                jobject thiz,
+                                                jstring jRequest,
+                                                jstring jConfigPath);
+
+JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_traceAttributes(JNIEnv *env,
+                                                jobject thiz,
+                                                jstring jRequest,
+                                                jstring jConfigPath);
+
 #ifdef __cplusplus
 }
 #endif
