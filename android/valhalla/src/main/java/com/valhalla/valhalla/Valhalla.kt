@@ -76,6 +76,31 @@ class Valhalla(
     return parseRouteResponse(rawResponse, request.directionsOptions?.format)
   }
 
+  /**
+   * Joins independently built packages ahead of time and writes per-package overlays to outputDir.
+   *
+   * The config at configPath must contain a `mjolnir.packages` array describing the packages to
+   * join. Overlays are written to outputDir as `<name>.joined` files. Once the overlays are in
+   * place, point `mjolnir.package_joined` at outputDir so the packages route without rewriting
+   * tiles at runtime.
+   *
+   * @param configPath path to the Valhalla JSON config containing mjolnir.packages
+   * @param outputDir directory where the overlays are written
+   * @return JSON summary: seconds, join_key, joined, lost, full_rewrites, id_rewrites, clean_tiles,
+   *   and per-package overlay sizes
+   * @throws ValhallaException.Internal if the join fails with a Valhalla error
+   * @throws ValhallaException.InvalidError if the error response cannot be parsed
+   */
+  fun joinPackages(configPath: String, outputDir: String): String {
+    val result = valhallaActor.joinPackages(configPath, outputDir)
+    if (result.contains("code") && !result.contains("seconds")) {
+      val error = moshi.adapter(ErrorResponse::class.java).fromJson(result)
+      error?.let { throw ValhallaException.Internal(it) }
+      throw ValhallaException.InvalidError()
+    }
+    return result
+  }
+
   fun traceAttributes(request: TraceAttributesRequest): TraceAttributesResponse {
     val encodedRequest = moshi.adapter(TraceAttributesRequest::class.java).toJson(request)
     var rawResponse = valhallaActor.traceAttributes(encodedRequest)

@@ -1,8 +1,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <valhalla/tyr/actor.h>
 #include <valhalla/baldr/rapidjson_utils.h>
+#include <valhalla/baldr/packageset.h>
 #include <valhalla/loki/worker.h>
 #include "valhalla_actor.h"
+#include <chrono>
+#include <sstream>
 
 class TileGetterWrapper : public valhalla::baldr::tile_getter_t {
 public:
@@ -87,4 +90,34 @@ std::string ValhallaActor::traceAttributes(const std::string& request) {
     std::string req = std::string(request);
     std::string result = actor->trace_attributes(req);
     return result;
+}
+
+std::string joinPackages(const std::string& config_path, const std::string& output_dir) {
+    boost::property_tree::ptree config;
+    rapidjson::read_json(config_path, config);
+
+    const auto start = std::chrono::steady_clock::now();
+    const auto report = valhalla::baldr::PackageSet::WriteOverlays(config.get_child("mjolnir"), output_dir);
+    const std::chrono::duration<double> seconds = std::chrono::steady_clock::now() - start;
+
+    std::ostringstream out;
+    out << "{\"seconds\": " << seconds.count()
+        << ", \"join_key\": \"" << std::hex << report.key << "\""
+        << std::dec
+        << ", \"joined\": " << report.stats.joined
+        << ", \"lost\": " << report.stats.lost
+        << ", \"full_rewrites\": " << report.stats.full_rewrites
+        << ", \"id_rewrites\": " << report.stats.id_rewrites
+        << ", \"clean_tiles\": " << report.stats.clean_tiles
+        << ", \"overlays\": {";
+    for (size_t i = 0; i < report.overlays.size(); ++i) {
+        const auto& overlay = report.overlays[i];
+        if (i > 0) {
+            out << ", ";
+        }
+        out << "\"" << overlay.name << "\": {\"tiles\": " << overlay.tiles
+            << ", \"bytes\": " << overlay.bytes << "}";
+    }
+    out << "}}";
+    return out.str();
 }

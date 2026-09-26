@@ -26,6 +26,11 @@ JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_traceAttribu
                                                 jstring jRequest,
                                                 jstring jConfigPath);
 
+JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_joinPackages(JNIEnv *env,
+                                                jobject thiz,
+                                                jstring jConfigPath,
+                                                jstring jOutputDir);
+
 #ifdef __cplusplus
 }
 #endif

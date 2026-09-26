@@ -4,6 +4,7 @@ internal interface ValhallaActorProviding {
   fun route(request: String): String
   fun traceRoute(request: String): String
   fun traceAttributes(request: String): String
+  fun joinPackages(configPath: String, outputDir: String): String
 }
 
 /**
@@ -32,5 +33,9 @@ internal class ValhallaActor(private val configPath: String) : ValhallaActorProv
 
   override fun traceAttributes(request: String): String {
     return valhallaKotlin.traceAttributes(request, configPath)
+  }
+
+  override fun joinPackages(configPath: String, outputDir: String): String {
+    return valhallaKotlin.joinPackages(configPath, outputDir)
   }
 }

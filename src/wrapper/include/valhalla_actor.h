@@ -4,6 +4,7 @@
 #include <string>
 #include <valhalla/tyr/actor.h>
 #include <valhalla/baldr/tilegetter.h>
+#include <valhalla/baldr/packageset.h>
 
 class ValhallaMobileHttpClient {
 public:
@@ -40,5 +41,16 @@ public:
     std::string traceRoute(const std::string& request);
     std::string traceAttributes(const std::string& request);
 };
+
+/**
+ * Joins independently built packages (mjolnir.packages) ahead of time and writes per-package
+ * overlays to output_dir. Returns a JSON summary: seconds, join_key, joined, lost, full_rewrites,
+ * id_rewrites, clean_tiles, and per-package overlay sizes.
+ *
+ * @param config_path path to the Valhalla JSON config containing mjolnir.packages
+ * @param output_dir directory where the overlays are written
+ * @return JSON summary string
+ */
+std::string joinPackages(const std::string& config_path, const std::string& output_dir);
 
 #endif // VALHALLAACTOR_H
