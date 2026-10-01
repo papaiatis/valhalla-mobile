@@ -11,20 +11,28 @@
 extern "C" {
 #endif
 
+JNIEXPORT jlong JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_createActor(JNIEnv *env,
+                                                jobject thiz,
+                                                jstring jConfigPath);
+
+JNIEXPORT void JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_destroyActor(JNIEnv *env,
+                                                jobject thiz,
+                                                jlong handle);
+
 JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_route(JNIEnv *env,
                                                 jobject thiz,
                                                 jstring jRequest,
-                                                jstring jConfigPath);
+                                                jlong handle);
 
 JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_traceRoute(JNIEnv *env,
                                                 jobject thiz,
                                                 jstring jRequest,
-                                                jstring jConfigPath);
+                                                jlong handle);
 
 JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_traceAttributes(JNIEnv *env,
                                                 jobject thiz,
                                                 jstring jRequest,
-                                                jstring jConfigPath);
+                                                jlong handle);
 
 JNIEXPORT jstring JNICALL Java_com_valhalla_valhalla_ValhallaKotlin_joinPackages(JNIEnv *env,
                                                 jobject thiz,

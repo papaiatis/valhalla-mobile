@@ -25,13 +25,12 @@ class ValhallaActorTest {
 
   @Test
   fun testNoConfigPath() {
-    val valhalla = ValhallaActor("invalid.json")
-
-    val request =
-        "{\"locations\":[{\"lat\":45.843812,\"lon\":-123.768205},{\"lat\":45.869701,\"lon\":-123.766121}],\"costing\":\"auto\",\"units\":\"miles\"}"
-    val response = valhalla.route(request)
-
-    assertEquals(response, "{\"code\":-1,\"message\":\"Cannot open file invalid.json\"}")
+    try {
+      ValhallaActor("invalid.json")
+      fail("a missing config was accepted")
+    } catch (expected: RuntimeException) {
+      assertEquals("Cannot open file invalid.json", expected.message)
+    }
   }
 
   @Test
