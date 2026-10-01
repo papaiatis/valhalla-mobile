@@ -15,8 +15,8 @@ import org.junit.runner.RunWith
  * Joins two packages built independently (the assets in `golden/`, exported from the fork's
  * GoldenJoin test), then routes across the join.
  *
- * The hashes are those of the Linux build, so equal hashes mean the join writes byte-identical
- * overlays on this device.
+ * The hashes are those of the Linux build, so equal hashes mean the join writes the same changes
+ * on this device.
  */
 @RunWith(AndroidJUnit4::class)
 class ValhallaJoinPackagesTest {
@@ -40,8 +40,11 @@ class ValhallaJoinPackagesTest {
 
     assertEquals(0, report.getInt("lost"))
     assertTrue("nothing was joined: $report", report.getInt("joined") > 0)
-    assertEquals(WEST_OVERLAY_HASH, fnv1a(File(golden.overlays, "west.joined")))
-    assertEquals(EAST_OVERLAY_HASH, fnv1a(File(golden.overlays, "east.joined")))
+    // the overlay files are deflated, and zlib builds differ in what they write: the hashes cover
+    // the changes the patches hold
+    val overlays = report.getJSONObject("overlays")
+    assertEquals(WEST_PATCHES_HASH, overlays.getJSONObject("west").getString("content_hash"))
+    assertEquals(EAST_PATCHES_HASH, overlays.getJSONObject("east").getString("content_hash"))
 
     val valhalla = Valhalla(context, golden.routeConfig.absolutePath)
     // A is in the west package, h in the east one: the route crosses the join both ways.
@@ -65,7 +68,8 @@ class ValhallaJoinPackagesTest {
   private companion object {
     val WEST_TAR_HASH = 535886572131682744uL
     val EAST_TAR_HASH = 9302745409726607298uL
-    val WEST_OVERLAY_HASH = 16156776531689387855uL
-    val EAST_OVERLAY_HASH = 15970251218106846668uL
+    // the content hashes of the fork's GoldenJoin test
+    const val WEST_PATCHES_HASH = "97e78bd8f68f0618"
+    const val EAST_PATCHES_HASH = "35cf4fa8bcc8d90b"
   }
 }

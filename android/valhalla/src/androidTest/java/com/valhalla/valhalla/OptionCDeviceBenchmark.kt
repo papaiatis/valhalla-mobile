@@ -130,7 +130,9 @@ class OptionCDeviceBenchmark {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
     val config = File("/data/local/tmp/optc", "$target.json").absolutePath
     val cpus = InstrumentationRegistry.getArguments().getString("optc_cpus")
-    val overlays = File(context.cacheDir, "optc-overlays").apply {
+    // optional: a directory name in the cache to keep the overlays in, for routing with them
+    val keep = InstrumentationRegistry.getArguments().getString("optc_keep")
+    val overlays = File(context.cacheDir, keep ?: "optc-overlays").apply {
       deleteRecursively()
       mkdirs()
     }
@@ -146,7 +148,7 @@ class OptionCDeviceBenchmark {
     report.put("join", join)
     report.put("overlay_bytes", overlays.listFiles()!!.sumOf { it.length() })
     report.put("peak_rss_mb", memory().getDouble("VmHWM"))
-    overlays.deleteRecursively()
+    if (keep == null) overlays.deleteRecursively()
     Log.i(TAG, "RESULT $report")
     InstrumentationRegistry.getInstrumentation()
         .sendStatus(0, android.os.Bundle().apply { putString("optc_result", report.toString()) })

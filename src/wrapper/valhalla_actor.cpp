@@ -116,7 +116,8 @@ std::string joinPackages(const std::string& config_path, const std::string& outp
             out << ", ";
         }
         out << "\"" << overlay.name << "\": {\"tiles\": " << overlay.tiles
-            << ", \"bytes\": " << overlay.bytes << "}";
+            << ", \"bytes\": " << overlay.bytes << ", \"content_hash\": \"" << std::hex
+            << overlay.content_hash << std::dec << "\"}";
     }
     out << "}}";
     return out.str();
